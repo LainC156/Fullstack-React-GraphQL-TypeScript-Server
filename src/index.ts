@@ -16,6 +16,7 @@ import path from 'path'
 import { createConnection } from 'typeorm'
 import { User } from "./entities/User"
 import { Post } from "./entities/Post"
+import { Updoot } from "./entities/Updoot"
 
 const main = async () => {
     const conn = await createConnection({
@@ -26,9 +27,11 @@ const main = async () => {
         logging: true,
         synchronize: true,
         migrations: [path.join(__dirname, "./migrations/*")],
-        entities: [Post, User]
+        entities: [Post, User, Updoot]
     })
     await conn.runMigrations()
+
+    
     //await Post.delete({})
     // const orm = await MikroORM.init(microConfig)
     // //await orm.em.nativeDelete(User, {})
@@ -61,7 +64,7 @@ const main = async () => {
             },
             saveUninitialized: false,
             secret: "secret redis",
-            resave: false
+            resave: true
         })
     )
 
