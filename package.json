@@ -4,10 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "gen-env": "npx gen-env-types .env -o src/env.d.ts -e .",
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon dist/index.js",
     "start": "ts-node dist/index.js",
     "start2": "ts-node src/index.ts",
+    "build": "tsc -p tsconfig.json",
     "watch": "tsc -w",
     "dev2": "nodemon --exec ts-node src/index.ts"
   },
@@ -32,6 +34,8 @@
     "argon2": "^0.27.1",
     "connect-redis": "^5.1.0",
     "cors": "^2.8.5",
+    "dataloader": "^2.0.0",
+    "dotenv-safe": "^8.2.0",
     "express": "^4.17.1",
     "express-session": "^1.17.1",
     "graphql": "^15.5.0",

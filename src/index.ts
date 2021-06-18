@@ -1,5 +1,5 @@
 import "reflect-metadata"
-//import { MikroORM } from '@mikro-orm/core'
+import "dotenv-safe/config"
 import { COOKIE_NAME, __prod__ } from './constants'
 //import microConfig from './mikro-orm.config'
 import express from 'express'
@@ -17,21 +17,21 @@ import { createConnection } from 'typeorm'
 import { User } from "./entities/User"
 import { Post } from "./entities/Post"
 import { Updoot } from "./entities/Updoot"
+import { createUserLoader } from './utils/createUserLoader';
+import { createUpdootLoader } from "./utils/createUpdootLoader"
 
 const main = async () => {
     const conn = await createConnection({
         type: 'postgres',
-        database: 'lireddit2',
-        username: 'postgres',
-        password: 'postgres',
+        url: process.env.DATABASE_URL,
         logging: true,
-        synchronize: true,
+        //synchronize: true,
         migrations: [path.join(__dirname, "./migrations/*")],
         entities: [Post, User, Updoot]
     })
     await conn.runMigrations()
 
-    
+
     //await Post.delete({})
     // const orm = await MikroORM.init(microConfig)
     // //await orm.em.nativeDelete(User, {})
@@ -41,11 +41,12 @@ const main = async () => {
     const app = express()
 
     const RedisStore = connectRedis(session)
-    const redis = new Redis()
-    console.log('__prod__:', !__prod__)
+    const redis = new Redis(process.env.REDIS_URL)
+    //enable cookies in heroku, vercel, etc
+    app.set("trust proxy", 1)
     /// define use of cors
     app.use(cors({
-        origin: "http://localhost:3000",
+        origin: process.env.CORS_ORIGIN,
         credentials: true
     }))
     /// first initialize redis to use it in apollo server
@@ -60,10 +61,11 @@ const main = async () => {
                 maxAge: 1000 * 60 * 60 * 24 * 365 * 10, /// 10 years
                 httpOnly: true,
                 sameSite: "lax", //csrf
-                secure: __prod__/// cookie only works in https, When truthy, the Secure attribute is set, otherwise it is not
+                secure: __prod__,/// cookie only works in https, When truthly, the Secure attribute is set, otherwise it is not
+                domain: __prod__ ? '.codeponder.com' : undefined
             },
             saveUninitialized: false,
-            secret: "secret redis",
+            secret: process.env.SESSION_SECRET,
             resave: true
         })
     )
@@ -73,7 +75,7 @@ const main = async () => {
             resolvers: [HelloResolver, PostResolver, UserResolver],
             validate: false,
         }),
-        context: ({ req, res }) => ({ req, res, redis })
+        context: ({ req, res }) => ({ req, res, redis, userLoader: createUserLoader(), updootLoader: createUpdootLoader() })
     })
 
     apolloServer.applyMiddleware({
@@ -81,7 +83,7 @@ const main = async () => {
         cors: false
     })
 
-    app.listen(4000, () => {
+    app.listen(parseInt(process.env.PORT), () => {
         console.log('express server at: localhost:4000')
     })
 }
